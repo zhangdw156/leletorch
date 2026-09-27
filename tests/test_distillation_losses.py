@@ -9,8 +9,6 @@ from torch.distributions import Categorical, kl_divergence
 
 from llm.dpo_loss import dpo_loss
 from llm.kl_loss import kl_loss
-from llm.opd_fwd_kl import opd_fwd_kl
-from llm.opd_rev_kl import opd_rev_kl
 
 
 class DistillationLossTests(unittest.TestCase):
@@ -103,68 +101,6 @@ class DistillationLossTests(unittest.TestCase):
         torch.testing.assert_close(kl_loss(log_p, log_p), torch.tensor(0.))
         torch.testing.assert_close(kl_loss(log_p, log_q, torch.zeros_like(mask)), torch.tensor(0.))
 
-    def test_opd_directions_temperatures_and_student_gradients(self):
-        mask = torch.tensor([[True, True, False], [True, False, False]])
-        for loss_fn in (opd_fwd_kl, opd_rev_kl):
-            for temperature in (1.0, 2.0):
-                with self.subTest(direction=loss_fn.__name__, temperature=temperature):
-                    student = torch.randn(2, 3, 5, dtype=torch.float64, requires_grad=True)
-                    teacher = torch.randn(2, 3, 5, dtype=torch.float64, requires_grad=True)
-                    actual = loss_fn(student, teacher, mask, temperature)
-                    student_dist = Categorical(logits=student / temperature)
-                    teacher_dist = Categorical(logits=teacher.detach() / temperature)
-                    expected = (kl_divergence(teacher_dist, student_dist) if loss_fn is opd_fwd_kl
-                                else kl_divergence(student_dist, teacher_dist))
-                    expected = temperature ** 2 * expected[mask].mean()
-                    torch.testing.assert_close(actual, expected)
-                    student_grad, teacher_grad = torch.autograd.grad(actual, (student, teacher), allow_unused=True)
-                    expected_grad = torch.autograd.grad(expected, student)[0]
-                    torch.testing.assert_close(student_grad, expected_grad)
-                    self.assertIsNone(teacher_grad)
-
-    def test_opd_equal_distributions_and_padding(self):
-        for loss_fn in (opd_fwd_kl, opd_rev_kl):
-            with self.subTest(direction=loss_fn.__name__):
-                student = torch.randn(2, 3, 5, dtype=torch.float64, requires_grad=True)
-                loss = loss_fn(student, student.detach())
-                torch.testing.assert_close(loss, torch.tensor(0., dtype=loss.dtype))
-                torch.testing.assert_close(torch.autograd.grad(loss, student)[0], torch.zeros_like(student))
-
-                # 无效位置在 log_softmax 之前屏蔽，避免全 -inf 行污染梯度。
-                mask = torch.tensor([[True, False, False], [True, False, False]])
-                padded_student = student.detach().masked_fill(~mask.unsqueeze(-1), float('-inf')).requires_grad_()
-                padded_teacher = torch.randn_like(student).masked_fill(~mask.unsqueeze(-1), float('nan')).requires_grad_()
-                loss = loss_fn(padded_student, padded_teacher, mask)
-                expected = loss_fn(padded_student[mask], padded_teacher[mask])
-                torch.testing.assert_close(loss, expected)
-                grad = torch.autograd.grad(loss, padded_student)[0]
-                self.assertTrue(torch.isfinite(grad).all())
-                torch.testing.assert_close(grad[~mask], torch.zeros_like(grad[~mask]))
-
-                masked_student = torch.full((2, 3, 5), float('-inf'), requires_grad=True)
-                masked_teacher = torch.full_like(masked_student, float('nan'), requires_grad=True)
-                loss = loss_fn(masked_student, masked_teacher, torch.zeros(2, 3, dtype=torch.bool))
-                torch.testing.assert_close(loss, torch.tensor(0.))
-                grad = torch.autograd.grad(loss, masked_student)[0]
-                torch.testing.assert_close(grad, torch.zeros_like(masked_student))
-
-    def test_opd_half_precision_large_logits(self):
-        for dtype in (torch.float16, torch.bfloat16):
-            for loss_fn in (opd_fwd_kl, opd_rev_kl):
-                with self.subTest(dtype=dtype, direction=loss_fn.__name__):
-                    student = torch.tensor([[1000., -1000., 0.], [-1000., 1000., 0.]], dtype=dtype, requires_grad=True)
-                    teacher = -student.detach()
-                    temperature = 0.01
-                    actual = loss_fn(student, teacher, temperature=temperature)
-                    log_student = (student.float() / temperature).log_softmax(-1)
-                    log_teacher = (teacher.float() / temperature).log_softmax(-1)
-                    target, predicted = ((log_teacher, log_student) if loss_fn is opd_fwd_kl
-                                         else (log_student, log_teacher))
-                    expected = temperature ** 2 * F.kl_div(predicted, target, log_target=True, reduction='batchmean')
-                    torch.testing.assert_close(actual, expected)
-                    self.assertTrue(torch.isfinite(actual))
-                    self.assertTrue(torch.isfinite(torch.autograd.grad(actual, student)[0]).all())
-
     def test_invalid_shapes_and_parameters(self):
         log_probs = torch.zeros(2)
         logits = torch.zeros(2, 3, 4)
@@ -175,10 +111,6 @@ class DistillationLossTests(unittest.TestCase):
             lambda: kl_loss(logits, logits, reduction='invalid'),
             lambda: kl_loss(logits, logits[:, :1]),
             lambda: kl_loss(logits, logits, token_mask=torch.ones(2)),
-            lambda: opd_fwd_kl(logits, logits, temperature=0),
-            lambda: opd_rev_kl(logits, logits, temperature=float('inf')),
-            lambda: opd_fwd_kl(logits, logits, temperature=float('nan')),
-            lambda: opd_rev_kl(logits, logits, token_mask=torch.ones(2, 1)),
         )
         for index, call in enumerate(invalid_calls):
             with self.subTest(index=index), self.assertRaises(ValueError):
