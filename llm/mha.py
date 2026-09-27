@@ -24,7 +24,7 @@ class MHA(nn.Module):
         """
         x: [B, L, D]；past_k、past_v: [B, H, S, Dh]，缓存需成对提供。
         返回 out: [B, L, D]，以及包含当前 token 的新 K/V 缓存 [B, H, S+L, Dh]。
-        当前带缓存的因果推理分支适用于单 token 续算，多 token 续算见下方 TODO。
+        因果遮罩按缓存长度偏移，支持单 token 和多 token 分块续算。
         """
         B,L,D=x.shape
         H=self.num_heads
@@ -50,10 +50,12 @@ class MHA(nn.Module):
         scores=torch.matmul(q,k.transpose(-1,-2))
         scores=scores/math.sqrt(Dh)
         
-        # 无缓存时，下三角掩码让每个 token 只能访问自身及之前的位置
-        # TODO: 有缓存且 L>1 时，还需按缓存长度 S 偏移构造因果掩码
-        if causal and past_k is None:
-            mask=torch.tril(torch.ones(L,L,device=x.device,dtype=torch.bool))
+        # 第 i 个新 token 的绝对位置是 S+i，只能访问 key 位置 <= S+i
+        if causal:
+            past_len=k.shape[-2]-L
+            q_pos=past_len+torch.arange(L,device=x.device)
+            k_pos=torch.arange(k.shape[-2],device=x.device)
+            mask=k_pos[None,:]<=q_pos[:,None]
             scores=scores.masked_fill(~mask,float("-inf"))
         
         # 对 key 维度做数值稳定的 softmax，被遮罩的 -inf 位置得到 0 权重

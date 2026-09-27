@@ -11,6 +11,7 @@ def apply_rope(
     """
     旋转位置编码（RoPE）：对 Q/K 的相邻特征对做二维旋转，输出形状不变。
     q: [B, Hq, L, D]，k: [B, Hk, L, D]，position_ids: [B, L]。
+    未提供 position_ids 时使用 0 到 L-1；缓存续算时应显式传入带偏移的位置。
     rotary_dim 为参与旋转的前缀维数，应为不超过 D 的正偶数；其余维度直接保留。
     """
     B,_,L,D=q.shape
@@ -24,7 +25,9 @@ def apply_rope(
     i=torch.arange(rotary_dim//2,device=device,dtype=torch.float32)
     inv_freq=1.0/(base**(2*i/rotary_dim))
     
-    # TODO: 当前未处理 position_ids=None，调用时必须显式传入位置张量
+    # 默认所有 batch 使用相同的序列位置，位置张量与 q 位于同一设备
+    if position_ids is None:
+        position_ids=torch.arange(L,device=device).unsqueeze(0).expand(B,-1)
     # 位置除以 scaling_factor，实现线性位置缩放
     position_ids=position_ids/scaling_factor
     

@@ -1,1 +1,41 @@
-.venv
+# Python 虚拟环境
+.venv/
+venv/
+env/
+ENV/
+
+# Python 字节码和交互缓存
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+
+# 测试、类型检查和代码检查缓存
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# 构建和打包产物
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# 本地环境变量（保留示例配置）
+.env
+.env.*
+!.env.example
+!.env.sample
+!.env.template
+
+# 系统和编辑器临时文件
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
