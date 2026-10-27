@@ -5,8 +5,8 @@ import unittest
 import torch
 import torch.nn.functional as F
 
-from llm.mha import MHA
-from llm.transformer import Transformer
+from src.llm.mha import MHA
+from src.llm.transformer import Transformer
 
 
 class TransformerTests(unittest.TestCase):

@@ -6,8 +6,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from llm.moe import MoE
-from llm.transformer import Transformer
+from src.llm.moe import MoE
+from src.llm.transformer import Transformer
 
 
 class MoETests(unittest.TestCase):

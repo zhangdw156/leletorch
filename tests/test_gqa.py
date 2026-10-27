@@ -5,9 +5,9 @@ import unittest
 import torch
 import torch.nn.functional as F
 
-from llm.gqa import GQA
-from llm.mha import MHA
-from llm.rope import apply_rope
+from src.llm.gqa import GQA
+from src.llm.mha import MHA
+from src.llm.rope import apply_rope
 
 
 def sdpa_reference(model, x, causal=False, position_ids=None, query_start=0):

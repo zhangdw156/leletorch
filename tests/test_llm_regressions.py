@@ -5,10 +5,10 @@ import unittest
 import torch
 import torch.nn.functional as F
 
-from llm.mha import MHA
-from llm.rmsnorm import RMSNorm
-from llm.rope import apply_rope
-from llm.softmax import softmax
+from src.llm.mha import MHA
+from src.llm.rmsnorm import RMSNorm
+from src.llm.rope import apply_rope
+from src.llm.softmax import softmax
 
 
 class LLMRegressionTests(unittest.TestCase):

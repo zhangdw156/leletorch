@@ -7,8 +7,8 @@ import torch
 import torch.nn.functional as F
 from torch.distributions import Categorical, kl_divergence
 
-from llm.dpo_loss import dpo_loss
-from llm.kl_loss import kl_loss
+from src.llm.dpo_loss import dpo_loss
+from src.llm.kl_loss import kl_loss
 
 
 class DistillationLossTests(unittest.TestCase):

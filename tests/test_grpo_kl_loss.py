@@ -6,7 +6,7 @@ import unittest
 import torch
 from torch.distributions import Categorical, kl_divergence
 
-from llm.grpo_kl_loss import grpo_kl_loss
+from src.llm.grpo_kl_loss import grpo_kl_loss
 
 
 class GRPOKLLossTests(unittest.TestCase):

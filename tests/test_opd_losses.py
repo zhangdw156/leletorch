@@ -6,8 +6,8 @@ import torch
 import torch.nn.functional as F
 from torch.distributions import Categorical, kl_divergence
 
-from llm.opd_fwd_kl import opd_fwd_kl
-from llm.opd_rev_kl import opd_rev_kl
+from src.llm.opd_fwd_kl import opd_fwd_kl
+from src.llm.opd_rev_kl import opd_rev_kl
 
 
 class OPDLossTests(unittest.TestCase):
