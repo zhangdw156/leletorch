@@ -6,7 +6,7 @@ import torch.nn as nn
 if __package__:
     from .rope import apply_rope
 else:
-    from rope import apply_rope
+    from src.llm.rope import apply_rope
 
 
 class MLA(nn.Module):

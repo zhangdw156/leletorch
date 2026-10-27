@@ -9,10 +9,10 @@ if __package__:
     from .rmsnorm import RMSNorm
     from .swiglu import SwiGLU
 else:
-    from cross_entropy import cross_entropy
-    from mha import MHA
-    from rmsnorm import RMSNorm
-    from swiglu import SwiGLU
+    from src.llm.cross_entropy import cross_entropy
+    from src.llm.mha import MHA
+    from src.llm.rmsnorm import RMSNorm
+    from src.llm.swiglu import SwiGLU
 
 
 class TransformerBlock(nn.Module):

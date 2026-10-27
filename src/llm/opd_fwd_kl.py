@@ -3,7 +3,7 @@ import torch
 if __package__:
     from .kl_loss import _distillation_log_probs, kl_loss
 else:
-    from kl_loss import _distillation_log_probs, kl_loss
+    from src.llm.kl_loss import _distillation_log_probs, kl_loss
 
 
 def opd_fwd_kl(

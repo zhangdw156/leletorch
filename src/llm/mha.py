@@ -6,8 +6,8 @@ if __package__:
     from .rope import apply_rope
     from .softmax import softmax
 else:
-    from rope import apply_rope
-    from softmax import softmax
+    from src.llm.rope import apply_rope
+    from src.llm.softmax import softmax
 
 
 class MHA(nn.Module):

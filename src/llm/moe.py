@@ -8,8 +8,8 @@ if __package__:
     from .softmax import softmax
     from .swiglu import SwiGLU
 else:
-    from softmax import softmax
-    from swiglu import SwiGLU
+    from src.llm.softmax import softmax
+    from src.llm.swiglu import SwiGLU
 
 
 class MoE(nn.Module):
